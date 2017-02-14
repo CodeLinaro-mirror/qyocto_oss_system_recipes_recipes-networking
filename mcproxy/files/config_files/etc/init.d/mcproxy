@@ -1,8 +1,7 @@
-#!/bin/sh /etc/rc.common
-# Copyright (c) 2016 The Linux Foundation. All rights reserved.
+#!/bin/sh -e
+# Copyright (c) 2016-2017 The Linux Foundation. All rights reserved.
 # Copyright (C) 2014-2015 OpenWrt.org
-
-USE_PROCD=1
+. /lib/functions.sh
 
 mcproxy_handle_instances() {
 	local instance="$1"
@@ -136,23 +135,13 @@ mcproxy_handle_behaviour() {
 	echo -e "${pre}pinstance $instance $section \"$interface\" $direction $rule_table;\n" >> $conf_file
 }
 
-mcproxy_network_trigger() {
-	procd_add_interface_trigger "interface.*" "$1" /etc/init.d/mcproxy restart
-}
-mcproxy_handle_network() {
-	local instance="$1"
-
-	config_list_foreach "$instance" upstream mcproxy_network_trigger
-	config_list_foreach "$instance" downstream mcproxy_network_trigger
-}
-
 start_instance() {
 	local cfg="$1"
 	local aux
 	local conf_file
 
 	config_get_bool aux "$cfg" 'disabled' '0'
-	[ "$aux" = 1 ] && return 1
+	[ "$aux" = 1 ] && return 0
 
 	config_get conf_file "$cfg" "file"
 	if [ ! -n "$conf_file" ]; then
@@ -168,29 +157,70 @@ start_instance() {
 		config_foreach mcproxy_handle_behaviour behaviour $conf_file
 	fi
 
-	procd_open_instance
-
-	procd_set_param command /usr/sbin/mcproxy
-	procd_append_param command -f $conf_file
-	#procd_set_param limits core="unlimited"
-
-	config_get_bool aux "$cfg" 'respawn' '0'
-	[ "$aux" = 1 ] && procd_set_param respawn
-
-	procd_open_trigger
-	config_foreach mcproxy_handle_network instance
-	procd_close_trigger
-
-	procd_close_instance
-}
-
-service_triggers() {
-	procd_open_trigger
-	procd_add_config_trigger "config.change" "mcproxy" /etc/init.d/mcproxy restart
-	procd_close_trigger
+	start-stop-daemon -S -x /usr/sbin/mcproxy -- -f $conf_file &
 }
 
 start_service() {
 	config_load mcproxy
 	config_foreach start_instance mcproxy
 }
+IFL=""
+mcproxy_reload_instances() {
+	local instance="$1"
+	local disabled
+	local upstreams
+	local downstreams
+
+	config_get_bool disabled "$instance" 'disabled' '0'
+	if [ $disabled -eq 1 ]; then
+		return 0
+	fi
+	config_get upstreams "$instance" "upstream"
+	IFL="$IFL"" $upstreams"
+	config_get downstreams "$instance" "downstream"
+	IFL="$IFL"" $downstreams"
+}
+reload_instance() {
+	local cfg="$1"
+	local aux
+	local conf_file
+
+	config_get_bool aux "$cfg" 'disabled' '0'
+	[ "$aux" = 1 ] && return 0
+	config_foreach mcproxy_reload_instances instance
+}
+reload_service() {
+	config_load mcproxy
+	config_foreach reload_instance mcproxy
+	for intf in $IFL
+	do
+		if [ "$intf" = "$1" ]; then
+			return 1
+		fi
+	done
+	return 0
+}
+case "$1" in
+start)
+	start_service
+	;;
+stop)
+	start-stop-daemon -K -n mcproxy
+	;;
+restart)
+	$0 stop
+	$0 start
+	;;
+reload)
+	reload_service $2 || {
+		$0 stop
+		$0 start
+	}
+	;;
+*)
+	echo "Usage: /etc/init.d/networking {start|stop}"
+	exit 1
+	;;
+esac
+
+exit 0

@@ -4,6 +4,8 @@ LICENSE = "GPL-2.0+"
 PR = "r0"
 
 inherit cmake
+inherit update-alternatives
+inherit update-rc.d
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
@@ -22,11 +24,16 @@ SRCREV = "b7bd2d0809a0d1f177181c361b9a6c83e193b79a"
 S = "${WORKDIR}/git"
 
 do_install_append() {
-	cp -r ${WORKDIR}/config_files/* ${D}/
+	install -d ${D}${sysconfdir}/init.d
+	install -d ${D}${sysconfdir}/config
+	install -d ${D}${sysconfdir}/network/if-up.d
+	install -m 0755 ${WORKDIR}/config_files/etc/init.d/mcproxy ${D}${sysconfdir}/init.d/mcproxy
+	install -m 0755 ${WORKDIR}/config_files/etc/config/mcproxy ${D}${sysconfdir}/config/mcproxy
+	install -m 0755 ${WORKDIR}/config_files/etc/mcproxy.ifu ${D}${sysconfdir}/network/if-up.d/mcproxy
 	mv ${D}/usr/bin ${D}/usr/sbin
 	mv ${D}/usr/sbin/mcproxy-bin ${D}/usr/sbin/mcproxy
 }
 
 INITSCRIPT_PACKAGES = "mcproxy"
 INITSCRIPT_NAME = "mcproxy"
-INITSCRIPT_PARAMS = "start 98 S . stop 98 0 6 1 ."
+INITSCRIPT_PARAMS = "start 99 S . stop 98 0 6 1 ."
