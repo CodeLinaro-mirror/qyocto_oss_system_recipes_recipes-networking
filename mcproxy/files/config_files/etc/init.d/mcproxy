@@ -157,7 +157,7 @@ start_instance() {
 		config_foreach mcproxy_handle_behaviour behaviour $conf_file
 	fi
 
-	start-stop-daemon -S -x /usr/sbin/mcproxy -- -f $conf_file &
+	start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
 }
 
 start_service() {
@@ -202,18 +202,22 @@ reload_service() {
 }
 case "$1" in
 start)
+	echo "starting mcproxy..."
 	start_service
 	;;
 stop)
-	start-stop-daemon -K -n mcproxy
+	echo "stopping mcproxy..."
+	start-stop-daemon -q -o -K -x /usr/sbin/mcproxy
 	;;
 restart)
 	$0 stop
+	sleep 1
 	$0 start
 	;;
 reload)
 	reload_service $2 || {
 		$0 stop
+		sleep 1
 		$0 start
 	}
 	;;
