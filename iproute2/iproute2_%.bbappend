@@ -1,6 +1,8 @@
 LICENSE = "GPLv2+"
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/:"
+SRC_URI += "file://001-rt_tables.patch"
+
+FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 do_install_append() {
 	install -d ${D}${includedir}

@@ -1,0 +1,9 @@
+--- a/etc/iproute2/rt_tables
++++ b/etc/iproute2/rt_tables
+@@ -9,3 +9,6 @@
+ # local
+ #
+ #1	inr.ruhep
++# Adding new routes required by LAN & WAN services in Utopia Subsystem.
++3       erouter
++4       all_lans
