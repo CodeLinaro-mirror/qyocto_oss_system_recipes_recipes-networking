@@ -17,7 +17,7 @@ DEPENDS_${PN} = "kernel-module-netfilter"
 
 S = "${WORKDIR}/qca-mcs-lkm"
 
-PACKAGES += "kernel-module-mcs-lkm"
+PACKAGES += "kernel-module-qca-mcs"
 
 setup_build_variables() {
 	export LINUX_VERSION="${KERNEL_VERSION}"; 
@@ -45,3 +45,4 @@ do_install() {
 }
 
 KERNEL_MODULE_AUTOLOAD += "qca-mcs"
+module_autoload_qca-mcs = "qca-mcs"
