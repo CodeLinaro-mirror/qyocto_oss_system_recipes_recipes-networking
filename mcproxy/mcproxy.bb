@@ -4,8 +4,7 @@ LICENSE = "GPL-2.0+"
 PR = "r0"
 
 inherit cmake
-inherit update-alternatives
-inherit update-rc.d
+inherit systemd
 
 LIC_FILES_CHKSUM = "file://COPYING;md5=b234ee4d69f5fce4486a80fdaf4a4263"
 
@@ -24,16 +23,23 @@ SRCREV = "b7bd2d0809a0d1f177181c361b9a6c83e193b79a"
 S = "${WORKDIR}/git"
 
 do_install_append() {
+	install -d ${D}${sysconfdir}/
 	install -d ${D}${sysconfdir}/init.d
-	install -d ${D}${sysconfdir}/config
 	install -d ${D}${sysconfdir}/network/if-up.d
-	install -m 0755 ${WORKDIR}/config_files/etc/init.d/mcproxy ${D}${sysconfdir}/init.d/mcproxy
-	install -m 0755 ${WORKDIR}/config_files/etc/config/mcproxy ${D}${sysconfdir}/config/mcproxy
+	install -d ${D}${systemd_unitdir}/system
 	install -m 0755 ${WORKDIR}/config_files/etc/mcproxy.ifu ${D}${sysconfdir}/network/if-up.d/mcproxy
+	install -m 0644 ${WORKDIR}/config_files/mcproxy.service ${D}${systemd_unitdir}/system/mcproxy.service
 	mv ${D}/usr/bin ${D}/usr/sbin
 	mv ${D}/usr/sbin/mcproxy-bin ${D}/usr/sbin/mcproxy
+	install -m 0755 ${WORKDIR}/config_files/etc/init.d/mcproxy_init_service ${D}/usr/sbin/mcproxy_init_service
 }
 
-INITSCRIPT_PACKAGES = "mcproxy"
-INITSCRIPT_NAME = "mcproxy"
-INITSCRIPT_PARAMS = "start 99 S . stop 98 0 6 1 ."
+FILES_${PN} += " \
+	${sysconfdir}/* \
+	${systemd_unitdir}/* \
+	/usr/sbin/* \
+	${systemd_unitdir}/system/mcproxy.service \
+"
+
+BBCLASSEXTEND += "native"
+SYSTEMD_SERVICE_${PN} += "mcproxy.service"

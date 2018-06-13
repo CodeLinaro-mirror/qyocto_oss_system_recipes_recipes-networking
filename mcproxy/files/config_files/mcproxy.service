@@ -1,0 +1,10 @@
+[Unit]
+Description=Set mcproxy init parameters
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "/usr/sbin/mcproxy_init_service start"
+
+[Install]
+WantedBy=multi-user.target

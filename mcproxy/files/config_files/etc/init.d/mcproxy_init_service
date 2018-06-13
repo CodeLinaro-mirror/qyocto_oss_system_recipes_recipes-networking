@@ -1,0 +1,141 @@
+#!/bin/sh -e
+# Copyright (c) 2016-2018 The Linux Foundation. All rights reserved.
+# Copyright (C) 2014-2015 OpenWrt.org
+
+mcproxy_handle_instances() {
+	local instance="$1"
+	local disabled
+	local pre=""
+	local name
+	local upstreams
+	local downstreams
+	local protocol
+	local conf_file="$1"
+
+	disabled=$(syscfg get mcproxy.disabled)
+	name=$(syscfg get mcproxy.name)
+	upstreams=$(syscfg get mcproxy.upstream)
+	downstreams=$(syscfg get mcproxy.downstream)
+	protocol=$(syscfg get mcproxy.protocol)
+
+	if [ $disabled -eq 1 ]; then
+		pre="# "
+	fi
+
+	#default WAN
+	[ -n "$upstreams" ] || {
+		upstreams=$(syscfg get wan_physical_ifname)
+	}
+
+	#default LAN
+	[ -n "$downstreams" ] || {
+		downstreams=$(syscfg get lan_ifname)
+	}
+
+	local str_up=""
+	if [ -n "$upstreams" ]; then
+		local upstream
+		for upstream in $upstreams; do
+			str_up="$str_up \"$upstream\""
+		done
+	fi
+
+	local str_down=""
+	if [ -n "$downstreams" ]; then
+		local downstream
+		for downstream in $downstreams; do
+			str_down="$str_down \"$downstream\""
+		done
+	fi
+
+
+	if [ ! -z $downstream ]; then
+		echo -e "${pre}protocol ${protocol};\n" >> $conf_file
+		echo -e "${pre}pinstance ${name}:${str_up} ==>${str_down};\n" >> $conf_file
+	fi
+}
+
+mcproxy_handle_tables () {
+
+	local table
+	local table_name
+	local entries
+	local conf_file="$1"
+
+	for i in {0..4}
+	do
+		table=$(syscfg get mcproxy.@table[$i])
+		table_name=$(syscfg get mcproxy.@table[$i].name)
+		entries=$(syscfg get mcproxy.@table[$i].entries)
+
+		echo "${table} ${table_name} {" >> ${conf_file}
+		echo "	${entries}" >> ${conf_file}
+		echo "};" >> ${conf_file}
+	done
+}
+
+start_instances() {
+	 if [ ! -n "$conf_file" ]; then
+		mkdir -p /var/etc
+		conf_file="/var/etc/mcproxy_mcproxy.conf"
+
+		>$conf_file
+		mcproxy_handle_instances ${conf_file}
+		mcproxy_handle_tables ${conf_file}
+	fi
+}
+
+mcproxy_syscfg_db_init () {
+
+	local db_initialized
+
+	db_initialized=$(syscfg get mcproxy.disabled)
+
+	if [ ! -n "$db_initialized" ]; then
+		syscfg set mcproxy.disabled 0
+		syscfg set mcproxy.name mcproxy
+		syscfg set mcproxy.upstream erouter0
+		syscfg set mcproxy.downstream br-lan
+		syscfg set mcproxy.protocol IGMPv3
+
+		syscfg set mcproxy.@table[0] table
+		syscfg set mcproxy.@table[0].name 'allways'
+		syscfg set mcproxy.@table[0].entries '(*|*)'
+		syscfg set mcproxy.@table[1] table
+		syscfg set mcproxy.@table[1].name 'piA_peering_ifs'
+		syscfg set mcproxy.@table[1].entries 'ap(*|*)'
+		syscfg set mcproxy.@table[2] table
+		syscfg set mcproxy.@table[2].name 'piA_upstreams'
+		syscfg set mcproxy.@table[2].entries 'a1(*|*)'
+		syscfg set mcproxy.@table[3] table
+		syscfg set mcproxy.@table[3].name 'piB_peering_ifs'
+		syscfg set mcproxy.@table[3].entries 'bp(*|*)'
+		syscfg set mcproxy.@table[4] table
+		syscfg set mcproxy.@table[4].name 'piB_upstreams'
+		syscfg set mcproxy.@table[4].entries 'b1(*|*)'
+	fi
+}
+
+case "$1" in
+start)
+	echo "starting mcproxy..."
+	mcproxy_syscfg_db_init
+	start_instances
+	start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
+	;;
+stop)
+	echo "stopping mcproxy..."
+	start-stop-daemon -q -o -K -x /usr/sbin/mcproxy
+	;;
+restart)
+	$0 stop
+	sleep 1
+	$0 start
+	;;
+*)
+	echo "Usage: /etc/init.d/mcproxy {start|stop|restart}"
+	exit 1
+	;;
+esac
+
+exit 0
