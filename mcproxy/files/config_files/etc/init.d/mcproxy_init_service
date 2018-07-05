@@ -116,6 +116,15 @@ mcproxy_syscfg_db_init () {
 	fi
 }
 
+register_event() {
+	 mcproxy_registered=`sysevent get mcproxy.registered`
+	if [ "" = "$mcproxy_registered" ] ; then
+		sysevent async wan-status /usr/sbin/mcproxy_init_service
+		sysevent async lan-status /usr/sbin/mcproxy_init_service
+		sysevent set mcproxy.registered 1
+	fi
+}
+
 case "$1" in
 start)
 	echo "starting mcproxy..."
@@ -132,10 +141,27 @@ restart)
 	sleep 1
 	$0 start
 	;;
+wan-status)
+	lan_status=$(sysevent get lan-status)
+	if [ "$2" = "stopped" ]; then
+		killall -9 mcproxy
+	fi
+	if [ "$2" = "started" -a "$lan_status" = "started" ]; then
+		start_instances
+		start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
+	fi
+	;;
+lan-status)
+	wan_status=$(sysevent get wan-status)
+	if [ "$2" = "started" -a "$wan_status" = "started" ]; then
+		start_instances
+		start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
+	fi
+	;;
 *)
 	echo "Usage: /etc/init.d/mcproxy {start|stop|restart}"
-	exit 1
 	;;
 esac
 
-exit 0
+register_event
+
