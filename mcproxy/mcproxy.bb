@@ -16,11 +16,14 @@ SRC_URI = "git://github.com/mcproxy/mcproxy.git \
 	   file://004_mld_filter_mode.patch \
 	   file://005-checksum_algorithm_fix.patch \
 	   file://005_group_retrans_timer.patch \
+	   file://006-fix-musl-build.patch \
 	   file://config_files"
 
 SRCREV = "b7bd2d0809a0d1f177181c361b9a6c83e193b79a"
 
 S = "${WORKDIR}/git"
+
+CXXFLAGS += "-D__MUSL__"
 
 do_install_append() {
 	install -d ${D}${sysconfdir}/
