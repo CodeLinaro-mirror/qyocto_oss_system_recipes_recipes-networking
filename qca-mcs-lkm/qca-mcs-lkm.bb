@@ -20,6 +20,7 @@ S = "${WORKDIR}/qca-mcs-lkm"
 PACKAGES += "kernel-module-qca-mcs"
 
 setup_build_variables() {
+	unset LDFLAGS
 	export LINUX_VERSION="${KERNEL_VERSION}"; 
 	export KERNELPATH="${STAGING_KERNEL_BUILDDIR}/source"
 	export KBUILDPATH="${STAGING_KERNEL_BUILDDIR}" 
