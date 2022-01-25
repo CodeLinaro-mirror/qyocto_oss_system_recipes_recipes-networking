@@ -11,9 +11,7 @@ SRC_URI = "file://qca-mcs-lkm \
            file://copyright \
 	   "
 
-DEPENDS = "virtual/kernel"
-
-DEPENDS_${PN} = "kernel-module-netfilter"
+DEPENDS = "virtual/kernel kernel-module-netfilter"
 
 S = "${WORKDIR}/qca-mcs-lkm"
 
