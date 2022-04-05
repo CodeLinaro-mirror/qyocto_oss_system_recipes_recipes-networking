@@ -1,0 +1,27 @@
+Author:     Ken Zhu <guigenz@codeaurora.org>
+AuthorDate: 2018-02-05 16:38:25 -0800
+Commit:     Ken Zhu <guigenz@codeaurora.org>
+CommitDate: 2018-02-05 16:41:10 -0800
+
+mcproxy: Fix macro could be wrongly extended
+
+The macro is extended in the way that is unexpected.
+Using parentheses to make this work in the way expected.
+
+This patch is propogated from Change-Id:If0d776eed3016607a0edaf5053352ea11afe7aa1
+
+Change-Id: I0f1d604a018bfdddf74a5fd9efc5905601ffd5b4
+Signed-off-by: aditya shedsale <quic_ashedsal@quicinc.com>
+
+diff -Nur a/mcproxy/include/utils/mroute_socket.hpp mcproxy-2014-12-31-b7bd2d0809a0d1f177181c361b9a6c83e193b79a/mcproxy/include/utils/mroute_socket.hpp
+--- a/mcproxy/include/utils/mroute_socket.hpp	2018-02-05 15:39:30.940069573 -0800
++++ mcproxy-2014-12-31-b7bd2d0809a0d1f177181c361b9a6c83e193b79a/mcproxy/include/utils/mroute_socket.hpp	2018-02-05 15:41:26.080066165 -0800
+@@ -34,7 +34,7 @@
+ #define MROUTE_TTL_THRESHOLD 1
+ #define MROUTE_DEFAULT_TTL 1
+
+-#define ADD_SIGNED_NUM_U16(r,a) (r)+= (a); (r)= (r) & 0xffff + ((r)>>16)
++#define ADD_SIGNED_NUM_U16(r,a) (r)+= (a); (r)= ((r) & 0xffff) + ((r)>>16)
+
+ /**
+  * @brief Wrapper for a multicast socket with additional functions to manipulate Linux kernel tables.

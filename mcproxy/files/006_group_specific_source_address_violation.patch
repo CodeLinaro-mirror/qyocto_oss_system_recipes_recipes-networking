@@ -1,0 +1,36 @@
+Author:     Ken Zhu <guigenz@codeaurora.org>
+AuthorDate: 2017-12-19 17:49:21 -0800
+Commit:     Ken Zhu <guigenz@codeaurora.org>
+CommitDate: 2020-05-26 11:00:28 -0700
+
+mcproxy: fix source address violating RFC3810.
+
+In the linux kernel, it prefered to use the same scope of destination
+and source address.
+
+if specified the dst address, linux will use global address to
+send group-specific query, that violate RFC3810 that the source address
+must be a link-local address.
+
+This patch is propogated from Change-ID:Id747930a62b83189c22cb1a07914acc2a670075e
+
+Change-Id: I0f1d604a018bfdddf74a5fd9efc5905601ffd5b4
+Signed-off-by: aditya shedsale <quic_ashedsal@quicinc.com>
+
+diff -Nur a/mcproxy/src/proxy/mld_sender.cpp mcproxy-2014-12-31-b7bd2d0809a0d1f177181c361b9a6c83e193b79a/mcproxy/src/proxy/mld_sender.cpp
+--- a/mcproxy/src/proxy/mld_sender.cpp	2017-12-19 16:46:07.179958378 -0800
++++ mcproxy-2014-12-31-b7bd2d0809a0d1f177181c361b9a6c83e193b79a/mcproxy/src/proxy/mld_sender.cpp	2017-12-19 16:52:30.967947016 -0800
+@@ -146,7 +146,13 @@
+         dst_addr = IPV6_ALL_NODES_ADDR;
+         q->max_resp_delay = htons(tv.maxrespi_to_maxrespc_mldv2(tv.get_query_response_interval()));
+     } else { //all other types of queries
+-        dst_addr = gaddr;
++	/*
++	 * In the linux kernel, it will same scope source address to send query with the dst address,
++	 * if specified the dst address,
++	 * the linux will use the global address as source address, that violate the RFC3810 that
++	 * the source address must be a link-local address.
++	 */
++        dst_addr = IPV6_ALL_NODES_ADDR;
+         q->max_resp_delay = htons(tv.maxrespi_to_maxrespc_mldv2(tv.get_last_listener_query_time()));
+     }
