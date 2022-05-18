@@ -7,6 +7,7 @@ inherit module
 FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
 
 SRC_URI = "git://github.com/ayourtch/nat46.git;protocol=git;branch=master \
+	   file://100-kernel-5.4-compat.patch \
 	   file://101-skb-reset.patch \
 	   file://102-mapt.patch \
 	   file://103-tos.patch \
