@@ -5,6 +5,8 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=/bin/sh -c "/usr/sbin/mcproxy_init_service start"
+ExecStop=/bin/sh -c "/usr/sbin/mcproxy_init_service stop"
+ExecReload=/bin/sh -c "/usr/sbin/mcproxy_init_service restart"
 RemainAfterExit=true
 
 [Install]
