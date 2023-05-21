@@ -29,6 +29,7 @@ SRC_URI = "git://github.com/ayourtch/nat46.git;protocol=git;branch=master \
 	   file://17-add-support-ipv6-udp-checksum-0.patch \
 	   file://18-performance_fix.patch \
 	   file://19-mapt-offloading-support.patch \
+	   file://20-sleeping_backtrace.patch \
 	   "
 
 SRCREV = "1182f30785e4274913f01a8c3d7e1b5437ae3819"
