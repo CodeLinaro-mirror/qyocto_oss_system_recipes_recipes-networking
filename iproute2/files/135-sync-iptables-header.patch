@@ -1,0 +1,70 @@
+Description: Sync header from iptables
+ The current versions in several suites have the same content:
+  - 1.6.1-2 (unstable)
+Bug: https://bugs.debian.org/868059
+Forwarded: not-needed
+Author: Cyril Brulebois <cyril@debamax.com>
+Last-Update: 2017-11-22
+--- a/include/xtables.h
++++ b/include/xtables.h
+@@ -206,7 +206,6 @@ enum xtables_ext_flags {
+ 	XTABLES_EXT_ALIAS = 1 << 0,
+ };
+ 
+-#if XTABLES_VERSION_CODE >= 12
+ struct xt_xlate;
+ 
+ struct xt_xlate_mt_params {
+@@ -222,7 +221,6 @@ struct xt_xlate_tg_params {
+ 	int				numeric;
+ 	bool				escape_quotes;
+ };
+-#endif
+ 
+ /* Include file for additions: new matches and targets. */
+ struct xtables_match
+@@ -288,11 +286,9 @@ struct xtables_match
+ 	void (*x6_fcheck)(struct xt_fcheck_call *);
+ 	const struct xt_option_entry *x6_options;
+ 
+-#if XTABLES_VERSION_CODE >= 12
+ 	/* Translate iptables to nft */
+ 	int (*xlate)(struct xt_xlate *xl,
+ 		     const struct xt_xlate_mt_params *params);
+-#endif
+ 
+ 	/* Size of per-extension instance extra "global" scratch space */
+ 	size_t udata_size;
+@@ -437,6 +433,17 @@ struct xtables_globals
+ 
+ #define XT_GETOPT_TABLEEND {.name = NULL, .has_arg = false}
+ 
++/*
++     * enum op-
++     *
++     * For writing clean nftables translations code
++     */
++enum xt_op {
++	XT_OP_EQ,
++	XT_OP_NEQ,
++	XT_OP_MAX,
++};
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -579,6 +586,14 @@ extern void xtables_lmap_free(struct xtables_lmap *);
+ extern int xtables_lmap_name2id(const struct xtables_lmap *, const char *);
+ extern const char *xtables_lmap_id2name(const struct xtables_lmap *, int);
+ 
++/* xlate infrastructure */
++struct xt_xlate *xt_xlate_alloc(int size);
++void xt_xlate_free(struct xt_xlate *xl);
++void xt_xlate_add(struct xt_xlate *xl, const char *fmt, ...);
++void xt_xlate_add_comment(struct xt_xlate *xl, const char *comment);
++const char *xt_xlate_get_comment(struct xt_xlate *xl);
++const char *xt_xlate_get(struct xt_xlate *xl);
++
+ #ifdef XTABLES_INTERNAL
+ 
+ /* Shipped modules rely on this... */

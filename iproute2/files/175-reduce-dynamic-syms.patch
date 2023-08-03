@@ -1,0 +1,59 @@
+From d98b1b6bddc86771d499ec97050c80d163e08ba2 Mon Sep 17 00:00:00 2001
+From: Aditya Shedsale <quic_ashedsal@quicinc.com>
+Date: Thu, 3 Aug 2023 08:42:23 +0530
+Subject: [PATCH] tc: reduce dynamic syms
+
+---
+ /tc/Makefile | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a//tc/Makefile b//tc/Makefile
+index 7d3d88e..f7fa99b 100644
+--- a//tc/Makefile
++++ b//tc/Makefile
+@@ -111,7 +111,7 @@ LDLIBS += -L. -lm
+ 
+ ifeq ($(SHARED_LIBS),y)
+ LDLIBS += -ldl
+-LDFLAGS += -Wl,-export-dynamic
++LDFLAGS += -Wl,--dynamic-list=dynsyms.list
+ endif
+ 
+ TCLIB := tc_core.o
+@@ -140,7 +140,7 @@ MODDESTDIR := $(DESTDIR)$(LIBDIR)/tc
+ all: tc $(TCSO)
+ 
+ tc: $(TCOBJ) $(LIBNETLINK) libtc.a
+-	$(QUIET_LINK)$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
++	$(QUIET_LINK)$(CC) $(filter-out dynsyms.list, $^) $(LDFLAGS) $(LDLIBS) -o $@
+ 
+ libtc.a: $(TCLIB)
+ 	$(QUIET_AR)$(AR) rcs $@ $^
+@@ -162,6 +162,7 @@ install: all
+ clean:
+ 	rm -f $(TCOBJ) $(TCLIB) libtc.a tc *.so emp_ematch.tab.h; \
+ 	rm -f emp_ematch.tab.*
++	rm -f dynsyms.list
+ 
+ q_atm.so: q_atm.c
+ 	$(QUIET_CC)$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -shared -fpic -o q_atm.so q_atm.c -latm
+@@ -201,4 +202,16 @@ static-syms.h: $(wildcard *.c)
+ 		sed -n '/'$$s'[^ ]* =/{s:.* \([^ ]*'$$s'[^ ]*\) .*:extern char \1[] __attribute__((weak)); if (!strcmp(sym, "\1")) return \1;:;p}' $$files ; \
+ 	done > $@
+ 
++else
++
++tc: dynsyms.list
++m_xt.so: dynsyms.list
++dynsyms.list: $(wildcard *.c)
++	files="$(filter-out $(patsubst %.so,%.c,$(TCSO)), $^)" ; \
++	echo "{" > $@ ; \
++	for s in `grep -B 3 '\<dlsym' $$files | sed -n '/snprintf/{s:.*"\([^"]*\)".*:\1:;s:%s::;p}'` ; do \
++		sed -n '/'$$s'[^ ]* =/{s:.* \([^ ]*'$$s'[^ ]*\) .*:\1;:;p}' $$files ; \
++	done >> $@ ; \
++	echo "show_stats; print_tm; parse_rtattr; get_u32; matches; addattr_l; addattr_nest; addattr_nest_end; };" >> $@
++
+ endif
+-- 
+2.17.1
+
