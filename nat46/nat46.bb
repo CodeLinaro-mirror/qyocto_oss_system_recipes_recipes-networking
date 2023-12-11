@@ -4,7 +4,7 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/nat46/modules/README;md5=21cb6c973b8a4
 
 inherit module
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI = "git://github.com/ayourtch/nat46.git;protocol=git;branch=master \
 	   file://100-kernel-5.4-compat.patch \
@@ -61,7 +61,7 @@ do_install() {
 	install -m 0644 ${S}/nat46/modules/nat46${KERNEL_OBJECT_SUFFIX} ${D}${base_libdir}/modules/${KERNEL_VERSION}/kernel/drivers/${PN}
 }
 
-FILES_${PN} = " \
+FILES:${PN} = " \
 	${includedir}/nat46/*.h \
 	"
 

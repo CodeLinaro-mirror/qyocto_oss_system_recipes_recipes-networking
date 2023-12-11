@@ -26,7 +26,7 @@ S = "${WORKDIR}/git"
 
 CXXFLAGS += "-D__MUSL__"
 
-do_install_append() {
+do_install:append() {
 	install -d ${D}${sysconfdir}/
 	install -d ${D}${sysconfdir}/init.d
 	install -d ${D}${sysconfdir}/network/if-up.d
@@ -41,7 +41,7 @@ do_install_append() {
 	install -m 0755 ${WORKDIR}/config_files/etc/mcproxy.conf ${D}/etc/config/mcproxy
 }
 
-FILES_${PN} += " \
+FILES:${PN} += " \
 	${sysconfdir}/* \
 	${systemd_unitdir}/* \
 	/usr/sbin/* \
@@ -50,4 +50,4 @@ FILES_${PN} += " \
 "
 
 BBCLASSEXTEND += "native"
-SYSTEMD_SERVICE_${PN} += "mcproxy.service"
+SYSTEMD_SERVICE:${PN} += "mcproxy.service"
