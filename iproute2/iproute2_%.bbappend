@@ -21,9 +21,9 @@ SRC_URI += "file://001-rt_tables.patch \
 	file://600-add-ppe-qdisc.patch \
 "
 
-FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-do_install_append() {
+do_install:append() {
 	install -d ${D}${includedir}
 	install -d ${D}${libdir}
 	install -m 0755 ${S}/include/libnetlink.h ${D}${includedir}
