@@ -1,6 +1,6 @@
 [Unit]
 Description=Set mcproxy init parameters
-After=network.target
+After=network.target RdkWanManager.service
 
 [Service]
 Type=simple
