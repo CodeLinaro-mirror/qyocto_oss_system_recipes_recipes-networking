@@ -4,6 +4,8 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/copyright;md5=3d92b2738307d98bbf9c982ca535
 
 inherit module
 
+CLEANBROKEN = "1"
+
 FILESPATH =+ "${TOPDIR}/../opensource/:"
 
 SRC_URI = "file://qca-mcs-lkm \
