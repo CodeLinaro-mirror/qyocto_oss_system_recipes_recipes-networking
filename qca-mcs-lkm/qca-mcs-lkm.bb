@@ -4,6 +4,8 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/copyright;md5=3d92b2738307d98bbf9c982ca535
 
 inherit module
 
+CLEANBROKEN = "1"
+
 SOC="${@d.getVar('SOC_FAMILY', d, 1).split(':')[1]}"
 SOC_TYPE = "${@d.getVar('SOC', d, 0).split('_')[0]}"
 

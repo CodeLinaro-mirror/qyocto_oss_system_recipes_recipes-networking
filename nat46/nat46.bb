@@ -4,6 +4,8 @@ LIC_FILES_CHKSUM = "file://${WORKDIR}/git/nat46/modules/README;md5=21cb6c973b8a4
 
 inherit module
 
+CLEANBROKEN = "1"
+
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
 SRC_URI = "git://github.com/ayourtch/nat46.git;protocol=git;branch=master \
