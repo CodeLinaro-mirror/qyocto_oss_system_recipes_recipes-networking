@@ -12,20 +12,21 @@ number.
 Change-Id: I6946e93bf8bed4c1378d19e75db0729097e0d9eb
 Signed-off-by: Pavithra R <pavir@codeaurora.org>
 
---- a/nat46/modules/nat46-core.c
-+++ b/nat46/modules/nat46-core.c
-@@ -25,6 +25,7 @@
-
+diff -Nur a/nat46/modules/nat46-core.c b/nat46/modules/nat46-core.c
+--- a/nat46/modules/nat46-core.c	2023-06-28 15:37:22.936722172 -0700
++++ b/nat46/modules/nat46-core.c	2023-06-28 15:39:01.019939638 -0700
+@@ -31,6 +31,7 @@
+ 
  static uint16_t xlate_pkt_in_err_v4_to_v6(nat46_instance_t *nat46, struct iphdr *iph,
-			struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport);
+ 			struct sk_buff *old_skb, uint16_t *sport, uint16_t *dport);
 +static DEFINE_SPINLOCK(port_id_lock);
-
+ 
  void
  nat46debug_dump(nat46_instance_t *nat46, int level, void *addr, int len)
-@@ -2106,6 +2107,73 @@ static uint16_t xlate_pkt_in_err_v4_to_v
-	return 1;
+@@ -2251,6 +2252,73 @@
+ 	return 1;
  }
-
+ 
 +/* Return the port number from CE's port set */
 +static uint16_t nat46_get_ce_port(nat46_xlate_rulepair_t *pair, uint16_t sport)
 +{
@@ -93,11 +94,11 @@ Signed-off-by: Pavithra R <pavir@codeaurora.org>
 +	return value;
 +}
 +
- void nat46_ipv4_input(struct sk_buff *old_skb) {
+ int nat46_ipv4_input(struct sk_buff *old_skb) {
    nat46_instance_t *nat46 = get_nat46_instance(old_skb);
    nat46_xlate_rulepair_t apair;
-@@ -2226,9 +2294,34 @@ void nat46_ipv4_input(struct sk_buff *ol
-
+@@ -2383,9 +2451,34 @@
+ 
    if (add_frag_header) {
      struct frag_hdr *fh = (struct frag_hdr*)(hdr6 + 1);
 +    uint16_t ce_port_num = 0;
@@ -131,4 +132,4 @@ Signed-off-by: Pavithra R <pavir@codeaurora.org>
 +
    }
    ip6_update_csum(new_skb, hdr6, add_frag_header);
-
+ 

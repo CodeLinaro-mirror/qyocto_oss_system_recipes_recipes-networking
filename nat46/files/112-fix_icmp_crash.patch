@@ -1,7 +1,7 @@
 Author:  Pavithra R <pavir@codeaurora.org>
 Date:    Wed Aug 5 20:57:33 2020 +0530
 
-nat46: Fix crash of free skb
+Fix crash of free skb
 
 This patch is propagated from the 4.4 kernel commit
 b959b0d45c66ae004a5bfc1687980093fa5b8cc3.
