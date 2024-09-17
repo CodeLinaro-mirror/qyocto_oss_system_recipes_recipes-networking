@@ -33,8 +33,9 @@ setup_build_variables() {
 EXTRA_CFLAGS += "-I${STAGING_INCDIR}/qca-ovsmgr \
 		 "
 
-MODULE_EXTRA_SYMBOLS ="${STAGING_INCDIR}/qca-mcs/Module.symvers \
-		       ${STAGING_INCDIR}/qca-ovsmgr/Module.symvers"
+MODULE_EXTRA_SYMBOLS ="${STAGING_INCDIR}/qca-ovsmgr/Module.symvers"
+
+# ${STAGING_INCDIR}/qca-mcs/Module.symvers
 
 MCS_MAKE_OPTS:${SOC} = " CONFIG_SUPPORT_OVS=y"
 MCS_MAKE_OPTS:ipq807x:remove = "CONFIG_SUPPORT_OVS=y"
