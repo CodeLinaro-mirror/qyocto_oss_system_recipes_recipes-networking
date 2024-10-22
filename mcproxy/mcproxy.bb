@@ -27,26 +27,17 @@ S = "${WORKDIR}/git"
 CXXFLAGS += "-D__MUSL__"
 
 do_install:append() {
-	install -d ${D}${sysconfdir}/
-	install -d ${D}${sysconfdir}/init.d
-	install -d ${D}${sysconfdir}/network/if-up.d
 	install -d ${D}${systemd_unitdir}/system
-	install -m 0755 ${WORKDIR}/config_files/etc/mcproxy.ifu ${D}${sysconfdir}/network/if-up.d/mcproxy
 	install -m 0644 ${WORKDIR}/config_files/mcproxy.service ${D}${systemd_unitdir}/system/mcproxy.service
 	mv ${D}/usr/bin ${D}/usr/sbin
 	mv ${D}/usr/sbin/mcproxy-bin ${D}/usr/sbin/mcproxy
-	install -m 0755 ${WORKDIR}/config_files/etc/init.d/mcproxy_init_service ${D}/usr/sbin/mcproxy_init_service
-	install -d ${D}/etc
-	install -d ${D}/etc/config
-	install -m 0755 ${WORKDIR}/config_files/etc/mcproxy.conf ${D}/etc/config/mcproxy
+	install -m 0755 ${WORKDIR}/config_files/mcproxy_init_service ${D}/usr/sbin/mcproxy_init_service
 }
 
 FILES:${PN} += " \
-	${sysconfdir}/* \
 	${systemd_unitdir}/* \
 	/usr/sbin/* \
 	${systemd_unitdir}/system/mcproxy.service \
-	/etc/config \
 "
 
 BBCLASSEXTEND += "native"
