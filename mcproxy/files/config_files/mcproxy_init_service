@@ -3,6 +3,8 @@
 # Copyright (c) 2016-2019 The Linux Foundation. All rights reserved.
 # Copyright (C) 2014-2015 OpenWrt.org
 
+conf_file="/tmp/mcproxy.conf"
+
 mcproxy_handle_instances() {
 	local instance="$1"
 	local disabled
@@ -11,7 +13,6 @@ mcproxy_handle_instances() {
 	local upstreams
 	local downstreams
 	local protocol
-	local conf_file="$1"
 
 	disabled=$(syscfg get mcproxy.disabled)
 	name=$(syscfg get mcproxy.name)
@@ -49,7 +50,6 @@ mcproxy_handle_instances() {
 		done
 	fi
 
-
 	if [ ! -z $downstream ]; then
 		echo -e "${pre}protocol ${protocol};\n" >> $conf_file
 		echo -e "${pre}pinstance ${name}:${str_up} ==>${str_down};\n" >> $conf_file
@@ -61,10 +61,9 @@ mcproxy_handle_tables () {
 	local table
 	local table_name
 	local entries
-	local conf_file="$1"
-        local i=0
+	local i=0
 
-        while [ $i -le 4 ]
+	while [ $i -le 4 ]
 	do
 		table=$(syscfg get mcproxy.@table[$i])
 		table_name=$(syscfg get mcproxy.@table[$i].name)
@@ -77,67 +76,69 @@ mcproxy_handle_tables () {
 	done
 }
 
-start_instances() {
-	 if [ ! -n "$conf_file" ]; then
-		mkdir -p /var/etc
-		conf_file="/var/etc/mcproxy_mcproxy.conf"
+mcproxy_handle_db_init () {
+	syscfg set mcproxy.@table[0] table
+	syscfg set mcproxy.@table[0].name 'allways'
+	syscfg set mcproxy.@table[0].entries '(*|*)'
+	syscfg set mcproxy.@table[1] table
+	syscfg set mcproxy.@table[1].name 'piA_peering_ifs'
+	syscfg set mcproxy.@table[1].entries 'ap(*|*)'
+	syscfg set mcproxy.@table[2] table
+	syscfg set mcproxy.@table[2].name 'piA_upstreams'
+	syscfg set mcproxy.@table[2].entries 'a1(*|*)'
+	syscfg set mcproxy.@table[3] table
+	syscfg set mcproxy.@table[3].name 'piB_peering_ifs'
+	syscfg set mcproxy.@table[3].entries 'bp(*|*)'
+	syscfg set mcproxy.@table[4] table
+	syscfg set mcproxy.@table[4].name 'piB_upstreams'
+	syscfg set mcproxy.@table[4].entries 'b1(*|*)'
 
-		>$conf_file
-		mcproxy_handle_instances ${conf_file}
-		mcproxy_handle_tables ${conf_file}
-	fi
-}
-
-mcproxy_syscfg_db_init () {
-
-	local db_initialized
-
-	db_initialized=$(syscfg get mcproxy.disabled)
-
-	if [ ! -n "$db_initialized" ]; then
-		syscfg set mcproxy.disabled 0
-		syscfg set mcproxy.name mcproxy
-		syscfg set mcproxy.upstream erouter0
-		syscfg set mcproxy.downstream brlan0
-		syscfg set mcproxy.protocol IGMPv3
-
-		syscfg set mcproxy.@table[0] table
-		syscfg set mcproxy.@table[0].name 'allways'
-		syscfg set mcproxy.@table[0].entries '(*|*)'
-		syscfg set mcproxy.@table[1] table
-		syscfg set mcproxy.@table[1].name 'piA_peering_ifs'
-		syscfg set mcproxy.@table[1].entries 'ap(*|*)'
-		syscfg set mcproxy.@table[2] table
-		syscfg set mcproxy.@table[2].name 'piA_upstreams'
-		syscfg set mcproxy.@table[2].entries 'a1(*|*)'
-		syscfg set mcproxy.@table[3] table
-		syscfg set mcproxy.@table[3].name 'piB_peering_ifs'
-		syscfg set mcproxy.@table[3].entries 'bp(*|*)'
-		syscfg set mcproxy.@table[4] table
-		syscfg set mcproxy.@table[4].name 'piB_upstreams'
-		syscfg set mcproxy.@table[4].entries 'b1(*|*)'
-	fi
+	mcproxy_handle_instances ${conf_file}
+	mcproxy_handle_tables ${conf_file}
 }
 
 register_event() {
-	 mcproxy_registered=`sysevent get mcproxy.registered`
-	if [ "" = "$mcproxy_registered" ] ; then
-		sysevent async wan-status /usr/sbin/mcproxy_init_service
-		sysevent async lan-status /usr/sbin/mcproxy_init_service
-		sysevent set mcproxy.registered 1
+	async="`sysevent async wan-status /usr/sbin/mcproxy_init_service`"
+	sysevent set mcproxy_wan_async "$async" > /dev/null
+	async="`sysevent async lan-status /usr/sbin/mcproxy_init_service`"
+	sysevent set mcproxy_lan_async "$async" > /dev/null
+}
+
+unregister_event() {
+	sysevent rm_async `sysevent get mcproxy_lan_async`
+	sysevent rm_async `sysevent get mcproxy_wan_async`
+}
+
+start_instances() {
+	lan_status=$(sysevent get lan-status)
+	wan_status=$(sysevent get wan-status)
+
+	if [ "$lan_status" = "started" -a "$wan_status" = "started" ]; then
+		start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
+	fi
+}
+
+stop_instances() {
+	inst=$(ps |grep mcproxy |head -n 1|awk '{ print $5 }')
+	name="$(basename "${inst}")"
+	if [ $name = "mcproxy" ]; then
+		start-stop-daemon -q -o -K -s 9 -x /usr/sbin/mcproxy
+	fi
+
+	if [ -e $conf_file ]; then
+		rm $conf_file
 	fi
 }
 
 case "$1" in
 start)
-	echo "starting mcproxy..."
-	mcproxy_syscfg_db_init
+	mcproxy_handle_db_init
 	start_instances
-	start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
+	register_event
 	;;
 stop)
-	echo "stopping mcproxy..."
-	start-stop-daemon -q -o -K -s 9 -x /usr/sbin/mcproxy
+	unregister_event
+	stop_instances
 	;;
 restart)
 	$0 stop
@@ -147,15 +148,17 @@ restart)
 wan-status)
 	lan_status=$(sysevent get lan-status)
 	if [ "$2" = "stopped" ]; then
-		killall -9 mcproxy
+		start-stop-daemon -q -o -K -s 9 -x /usr/sbin/mcproxy
 	fi
 	if [ "$2" = "started" -a "$lan_status" = "started" ]; then
-		start_instances
 		start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
 	fi
 	;;
 lan-status)
 	wan_status=$(sysevent get wan-status)
+	if [ "$2" = "stopped" ]; then
+		start-stop-daemon -q -o -K -s 9 -x /usr/sbin/mcproxy
+	fi
 	if [ "$2" = "started" -a "$wan_status" = "started" ]; then
 		start_instances
 		start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
@@ -165,6 +168,3 @@ lan-status)
 	echo "Usage: /etc/init.d/mcproxy {start|stop|restart}"
 	;;
 esac
-
-register_event
-
