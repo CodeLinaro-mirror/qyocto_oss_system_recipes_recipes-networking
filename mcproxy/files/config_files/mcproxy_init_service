@@ -119,7 +119,7 @@ start_instances() {
 }
 
 stop_instances() {
-	inst=$(ps |grep mcproxy |head -n 1|awk '{ print $5 }')
+	inst=$(ps -aux |grep mcproxy |head -n 1|awk '{ print $11 }')
 	name="$(basename "${inst}")"
 	if [ $name = "mcproxy" ]; then
 		start-stop-daemon -q -o -K -s 9 -x /usr/sbin/mcproxy
