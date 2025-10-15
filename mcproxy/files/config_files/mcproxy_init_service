@@ -112,8 +112,9 @@ unregister_event() {
 start_instances() {
 	lan_status=$(sysevent get lan-status)
 	wan_status=$(sysevent get wan-status)
+	disabled=$(syscfg get mcproxy.disabled)
 
-	if [ "$lan_status" = "started" -a "$wan_status" = "started" ]; then
+	if [ "$lan_status" = "started" -a "$wan_status" = "started" -a "$disabled" = "0" ]; then
 		start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
 	fi
 }
@@ -147,19 +148,21 @@ restart)
 	;;
 wan-status)
 	lan_status=$(sysevent get lan-status)
+	disabled=$(syscfg get mcproxy.disabled)
 	if [ "$2" = "stopped" ]; then
 		start-stop-daemon -q -o -K -s 9 -x /usr/sbin/mcproxy
 	fi
-	if [ "$2" = "started" -a "$lan_status" = "started" ]; then
+	if [ "$2" = "started" -a "$lan_status" = "started" -a "$disabled" = "0" ]; then
 		start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
 	fi
 	;;
 lan-status)
 	wan_status=$(sysevent get wan-status)
+	disabled=$(syscfg get mcproxy.disabled)
 	if [ "$2" = "stopped" ]; then
 		start-stop-daemon -q -o -K -s 9 -x /usr/sbin/mcproxy
 	fi
-	if [ "$2" = "started" -a "$wan_status" = "started" ]; then
+	if [ "$2" = "started" -a "$wan_status" = "started" -a "$disabled" = "0" ]; then
 		start_instances
 		start-stop-daemon -S -b -x /usr/sbin/mcproxy -- -f $conf_file
 	fi
