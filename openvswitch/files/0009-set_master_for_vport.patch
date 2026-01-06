@@ -1,11 +1,22 @@
-commit c0cdfc26ccec28e3a94a6b89c23a6e5c9b36b611 (HEAD -> work)
-Author: Ratheesh Kannoth <rkannoth@codeaurora.org>
-Date:   Fri Aug 14 10:00:01 2020 +0530
-
-openvswitch: Modify set_master patch for upgraded version
+From c0cdfc26ccec28e3a94a6b89c23a6e5c9b36b611 Mon Sep 17 00:00:00 2001
+From: Ratheesh Kannoth <rkannoth@codeaurora.org>
+Date: Fri, 14 Aug 2020 10:00:01 +0530
+Subject: [PATCH] openvswitch: Modify set_master patch for upgraded version
 
 Signed-off-by: Ratheesh Kannoth <rkannoth@codeaurora.org>
 Change-Id: I5f3458780a93b550f1f9964f1cd135ea9d7275c4
+---
+ datapath/linux/compat/include/linux/openvswitch.h |  1 +
+ lib/dpif-netlink.c                                | 17 ++++++++++-------
+ lib/dpif-netlink.h                                |  1 +
+ lib/netdev-provider.h                             |  2 ++
+ lib/netdev-vport.c                                |  7 +++++++
+ lib/netdev-vport.h                                |  1 +
+ lib/netdev.c                                      | 17 +++++++++++++++++
+ lib/netdev.h                                      |  1 +
+ ofproto/ofproto.c                                 |  4 ++++
+ vswitchd/bridge.c                                 |  3 +++
+ 10 files changed, 47 insertions(+), 7 deletions(-)
 
 diff --git a/datapath/linux/compat/include/linux/openvswitch.h b/datapath/linux/compat/include/linux/openvswitch.h
 index 2f0c6559e..3638d119b 100644
@@ -18,7 +29,7 @@ index 2f0c6559e..3638d119b 100644
 +	OVS_VPORT_ATTR_MASTER,	/* string name, up to IFNAMSIZ bytes long */
  	__OVS_VPORT_ATTR_MAX
  };
-
+ 
 diff --git a/lib/dpif-netlink.c b/lib/dpif-netlink.c
 index 5b5c96d72..3343adf59 100644
 --- a/lib/dpif-netlink.c
@@ -37,7 +48,7 @@ index 5b5c96d72..3343adf59 100644
      request.type = type;
      request.name = name;
 +    request.master = master;
-
+ 
      request.port_no = *port_nop;
      if (sock) {
 @@ -867,6 +868,7 @@ dpif_netlink_port_add_compat(struct dpif_netlink *dpif, struct netdev *netdev,
@@ -45,13 +56,13 @@ index 5b5c96d72..3343adf59 100644
      struct ofpbuf options;
      const char *name;
 +    const char *master;
-
+ 
      name = netdev_vport_get_dpif_port(netdev, namebuf, sizeof namebuf);
-
+ 
 @@ -895,6 +897,8 @@ dpif_netlink_port_add_compat(struct dpif_netlink *dpif, struct netdev *netdev,
      }
  #endif
-
+ 
 +    master = netdev_vport_get_dpif_port_master(netdev);
 +
      tnl_cfg = netdev_get_tunnel_config(netdev);
@@ -67,7 +78,7 @@ index 5b5c96d72..3343adf59 100644
 -        return dpif_netlink_port_add__(dpif, name, ovs_type, NULL, port_nop);
 +        return dpif_netlink_port_add__(dpif, name, ovs_type, NULL, port_nop, master);
      }
-
+ 
  }
 @@ -931,6 +935,7 @@ dpif_netlink_rtnl_port_create_and_add(struct dpif_netlink *dpif,
      static struct vlog_rate_limit rl = VLOG_RATE_LIMIT_INIT(5, 20);
@@ -75,11 +86,11 @@ index 5b5c96d72..3343adf59 100644
      const char *name;
 +    const char *master;
      int error;
-
+ 
      error = dpif_netlink_rtnl_port_create(netdev);
 @@ -943,8 +948,9 @@ dpif_netlink_rtnl_port_create_and_add(struct dpif_netlink *dpif,
      }
-
+ 
      name = netdev_vport_get_dpif_port(netdev, namebuf, sizeof namebuf);
 +    master = netdev_vport_get_dpif_port_master(netdev);
      error = dpif_netlink_port_add__(dpif, name, OVS_VPORT_TYPE_NETDEV, NULL,
@@ -91,7 +102,7 @@ index 5b5c96d72..3343adf59 100644
 @@ -2965,7 +2971,6 @@ dpif_netlink_zone_limits_from_ofpbuf(const struct ofpbuf *buf,
          return EINVAL;
      }
-
+ 
 -
      if (!attr[OVS_CT_LIMIT_ATTR_ZONE_LIMIT]) {
          return EINVAL;
@@ -105,12 +116,12 @@ index 5b5c96d72..3343adf59 100644
 +        nl_msg_put_string(buf, OVS_VPORT_ATTR_MASTER, vport->master);
 +    }
  }
-
+ 
  /* Clears 'vport' to "empty" values. */
 @@ -4461,7 +4470,6 @@ dpif_netlink_flow_from_ofpbuf(struct dpif_netlink_flow *flow,
      return 0;
  }
-
+ 
 -
  /*
   * If PACKET_TYPE attribute is present in 'data', it filters PACKET_TYPE out.
@@ -147,39 +158,24 @@ index 22f4cde33..14c6ba52d 100644
  struct netdev *netdev_from_name(const char *name);
  void netdev_get_devices(const struct netdev_class *,
                          struct shash *device_list);
-@@ -140,7 +142,6 @@ struct netdev_rxq {
-
- struct netdev *netdev_rxq_get_netdev(const struct netdev_rxq *);
-
--
- /* Network device class structure, to be defined by each implementation of a
-  * network device.
-  *
 diff --git a/lib/netdev-vport.c b/lib/netdev-vport.c
 index b57d21ff8..de05146d4 100644
 --- a/lib/netdev-vport.c
 +++ b/lib/netdev-vport.c
-@@ -149,6 +149,12 @@ netdev_vport_get_dpif_port(const struct netdev *netdev,
+@@ -149,6 +149,13 @@ netdev_vport_get_dpif_port(const struct netdev *netdev,
      }
  }
-
+ 
 +const char *
 +netdev_vport_get_dpif_port_master(const struct netdev *netdev)
 +{
 +    return netdev_get_master(netdev);
 +}
 +
++
  /* Whenever the route-table change number is incremented,
   * netdev_vport_route_changed() should be called to update
   * the corresponding tunnel interface status. */
-@@ -1102,7 +1108,6 @@ netdev_vport_get_pt_mode(const struct netdev *netdev)
-     return dev->tnl_cfg.pt_mode;
- }
-
--
- 
- #ifdef __linux__
- static int
 diff --git a/lib/netdev-vport.h b/lib/netdev-vport.h
 index 9d756a265..094c319ad 100644
 --- a/lib/netdev-vport.h
@@ -187,17 +183,17 @@ index 9d756a265..094c319ad 100644
 @@ -51,4 +51,5 @@ const char *netdev_vport_get_dpif_port(const struct netdev *,
                                         char namebuf[], size_t bufsize)
      OVS_WARN_UNUSED_RESULT;
-
+ 
 +const char *netdev_vport_get_dpif_port_master(const struct netdev *netdev);
  #endif /* netdev-vport.h */
 diff --git a/lib/netdev.c b/lib/netdev.c
-index f95b19af4..e9c2d6573 100644
+index f95b19af4..0e5e0e2e8 100644
 --- a/lib/netdev.c
 +++ b/lib/netdev.c
 @@ -1002,6 +1002,23 @@ netdev_get_name(const struct netdev *netdev)
      return netdev->name;
  }
-
+ 
 +/* Returns the master name of the network device that 'netdev' represents.
 + * The caller must not modify or free the returned string. */
 +const char *
@@ -218,39 +214,23 @@ index f95b19af4..e9c2d6573 100644
  /* Retrieves the MTU of 'netdev'.  The MTU is the maximum size of transmitted
   * (and received) packets, in bytes, not including the hardware header; thus,
   * this is typically 1500 bytes for Ethernet devices.
-@@ -1596,7 +1613,6 @@ netdev_get_custom_stats(const struct netdev *netdev,
-     return error;
- }
-
--
- /* Attempts to set input rate limiting (policing) policy, such that up to
-  * 'kbits_rate' kbps of traffic is accepted, with a maximum accumulative burst
-  * size of 'kbits' kb. */
 diff --git a/lib/netdev.h b/lib/netdev.h
-index fdbe0e1f5..1981adf64 100644
+index fdbe0e1f5..c0e8e5e3f 100644
 --- a/lib/netdev.h
 +++ b/lib/netdev.h
-@@ -179,6 +179,7 @@ bool netdev_mtu_is_user_config(struct netdev *);
- int netdev_get_ifindex(const struct netdev *);
+@@ -182,6 +182,7 @@ int netdev_get_ifindex(const struct netdev *);
  int netdev_set_tx_multiq(struct netdev *, unsigned int n_txq);
  enum netdev_pt_mode netdev_get_pt_mode(const struct netdev *);
+ void netdev_set_dpif_type(struct netdev *, const char *);
 +void netdev_set_master(struct netdev *netdev, char *master);
-
+ const char *netdev_get_dpif_type(const struct netdev *);
+ 
  /* Packet reception. */
- int netdev_rxq_open(struct netdev *, struct netdev_rxq **, int id);
 diff --git a/ofproto/ofproto.c b/ofproto/ofproto.c
 index 08830d837..260e326ce 100644
 --- a/ofproto/ofproto.c
 +++ b/ofproto/ofproto.c
-@@ -2167,7 +2167,6 @@ ofproto_port_set_config(struct ofproto *ofproto, ofp_port_t ofp_port,
-     }
- }
-
--
- static void
- flow_mod_init(struct ofputil_flow_mod *fm,
-               const struct match *match, int priority,
-@@ -2418,6 +2417,10 @@ ofport_open(struct ofproto *ofproto,
+@@ -2418,6 +2418,10 @@ ofport_open(struct ofproto *ofproto,
              ofproto_port->ofp_port = ofp_port;
          }
      }
@@ -265,21 +245,15 @@ diff --git a/vswitchd/bridge.c b/vswitchd/bridge.c
 index e591c26a6..df2a062b4 100644
 --- a/vswitchd/bridge.c
 +++ b/vswitchd/bridge.c
-@@ -356,7 +356,6 @@ static ofp_port_t iface_get_requested_ofp_port(
-     const struct ovsrec_interface *);
- static ofp_port_t iface_pick_ofport(const struct ovsrec_interface *);
-
--
- static void discover_types(const struct ovsrec_open_vswitch *cfg);
-
- static void
-@@ -2054,6 +2053,9 @@ iface_do_create(const struct bridge *br,
-
+@@ -2054,6 +2054,9 @@ iface_do_create(const struct bridge *br,
+ 
      iface_set_netdev_mtu(iface_cfg, netdev);
-
+ 
 +    /* Set bridge interface to netdev */
 +    netdev_set_master(netdev, br->name);
 +
      *ofp_portp = iface_pick_ofport(iface_cfg);
      error = ofproto_port_add(br->ofproto, netdev, ofp_portp);
      if (error) {
+-- 
+2.17.1
