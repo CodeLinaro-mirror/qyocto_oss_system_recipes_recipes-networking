@@ -1,0 +1,35 @@
+author	Rui Salvaterra <rsalvaterra@gmail.com>	Sat May 25 15:30:25 2024 +0000
+committer	Hauke Mehrtens <hauke@hauke-m.de>	Fri May 31 11:13:31 2024 +0200
+iproute2: update to 6.9.0
+
+Support for iptables action has been dropped. Remove tc-mod-iptables and related
+patch (175-reduce-dynamic-syms.patch).
+
+We also add the missing libbpf dependency for `ss` since iproute 8740ca9
+("ss: add support for BPF socket-local storage") now means that `ss` requires
+libbpf as well.
+
+Fix 170-ip_tiny.patch, as the help text didn't match all the included functions.
+
+Drop upstreamed patches 402-bpf-fix-warning-from-basename.patch
+and 403-bpf-include-libgen.h-for-basename.patch.
+
+All other patches automatically rebased.
+
+Co-authored-by: Rany Hany <rany_hany@riseup.net>
+Signed-off-by: Rui Salvaterra <rsalvaterra@gmail.com>
+Signed-off-by: Rany Hany <rany_hany@riseup.net>
+--- a/Makefile
++++ b/Makefile
+@@ -69,9 +69,9 @@ WFLAGS += -Wmissing-declarations -Wold-s
+ CFLAGS := $(WFLAGS) $(CCOPTS) -I../include -I../include/uapi $(DEFINES) $(CFLAGS)
+ YACCFLAGS = -d -t -v
+ 
+-SUBDIRS=lib ip tc bridge misc netem genl man
++SUBDIRS=lib ip tc bridge misc genl
+ ifeq ($(HAVE_MNL),y)
+-SUBDIRS += tipc devlink rdma dcb vdpa
++SUBDIRS += devlink rdma
+ endif
+ 
+ LIBNETLINK=../lib/libutil.a ../lib/libnetlink.a

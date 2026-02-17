@@ -1,0 +1,50 @@
+author	Hauke Mehrtens <hauke@hauke-m.de>	Thu Oct 03 21:51:54 2024 +0200
+committer	Hauke Mehrtens <hauke@hauke-m.de>	Sat Oct 05 12:39:13 2024 +0200
+iproute2: update to 6.11.0
+
+Release Notes:
+https://lore.kernel.org/netdev/20240717090601.20b2871f@hermes.local/T/
+https://lwn.net/Articles/990423/
+
+Remove patch `401-bridge-vlan.c-bridge-vlan.c-fix-build-with-gcc-14-on.patch`
+because it is upstream now.
+
+Backport two patches to fix build problems in bridge/mst.c
+
+Small size increase:
+ 38538 bin/packages/mips_24kc-old/base/devlink_6.9.0-r1_mips_24kc.ipk
+  7713 bin/packages/mips_24kc-old/base/genl_6.9.0-r1_mips_24kc.ipk
+ 31875 bin/packages/mips_24kc-old/base/ip-bridge_6.9.0-r1_mips_24kc.ipk
+187733 bin/packages/mips_24kc-old/base/ip-full_6.9.0-r1_mips_24kc.ipk
+126538 bin/packages/mips_24kc-old/base/ip-tiny_6.9.0-r1_mips_24kc.ipk
+  7619 bin/packages/mips_24kc-old/base/nstat_6.9.0-r1_mips_24kc.ipk
+ 20704 bin/packages/mips_24kc-old/base/rdma_6.9.0-r1_mips_24kc.ipk
+ 37607 bin/packages/mips_24kc-old/base/ss_6.9.0-r1_mips_24kc.ipk
+158909 bin/packages/mips_24kc-old/base/tc-bpf_6.9.0-r1_mips_24kc.ipk
+160459 bin/packages/mips_24kc-old/base/tc-full_6.9.0-r1_mips_24kc.ipk
+135846 bin/packages/mips_24kc-old/base/tc-tiny_6.9.0-r1_mips_24kc.ipk
+ 38669 bin/packages/mips_24kc-new/base/devlink_6.11.0-r1_mips_24kc.ipk
+  7719 bin/packages/mips_24kc-new/base/genl_6.11.0-r1_mips_24kc.ipk
+ 32676 bin/packages/mips_24kc-new/base/ip-bridge_6.11.0-r1_mips_24kc.ipk
+188920 bin/packages/mips_24kc-new/base/ip-full_6.11.0-r1_mips_24kc.ipk
+127313 bin/packages/mips_24kc-new/base/ip-tiny_6.11.0-r1_mips_24kc.ipk
+  7612 bin/packages/mips_24kc-new/base/nstat_6.11.0-r1_mips_24kc.ipk
+ 21065 bin/packages/mips_24kc-new/base/rdma_6.11.0-r1_mips_24kc.ipk
+ 37726 bin/packages/mips_24kc-new/base/ss_6.11.0-r1_mips_24kc.ipk
+158921 bin/packages/mips_24kc-new/base/tc-bpf_6.11.0-r1_mips_24kc.ipk
+160510 bin/packages/mips_24kc-new/base/tc-full_6.11.0-r1_mips_24kc.ipk
+136352 bin/packages/mips_24kc-new/base/tc-tiny_6.11.0-r1_mips_24kc.ipk
+
+Link: https://github.com/openwrt/openwrt/pull/16589
+Signed-off-by: Hauke Mehrtens <hauke@hauke-m.de>
+--- a/configure
++++ b/configure
+@@ -342,7 +342,7 @@ check_libbpf()
+ check_selinux()
+ # SELinux is a compile time option in the ss utility
+ {
+-	if ${PKG_CONFIG} libselinux --exists; then
++	if [ "${HAVE_SELINUX}" = "y" ] && ${PKG_CONFIG} libselinux --exists; then
+ 		echo "HAVE_SELINUX:=y" >>$CONFIG
+ 		echo "yes"
+ 

@@ -1,0 +1,24 @@
+author	Rany Hany <rany_hany@riseup.net>	Mon May 13 20:38:12 2024 +0300
+committer	Hauke Mehrtens <hauke@hauke-m.de>	Fri May 31 11:13:31 2024 +0200
+iproute2: fix build on GCC 14
+
+Upstream patches:
+
+401-bridge-vlan.c-bridge-vlan.c-fix-build-with-gcc-14-on.patch
+402-bpf-fix-warning-from-basename.patch
+403-bpf-include-libgen.h-for-basename.patch
+
+The patch (400-rdma-include-libgen.h-for-basename.patch) was not
+submitted upstream but just adds a missing include for basename.
+
+Signed-off-by: Rany Hany <rany_hany@riseup.net>
+--- a/rdma/rdma.h
++++ b/rdma/rdma.h
+@@ -16,6 +16,7 @@
+ #include <rdma/rdma_user_cm.h>
+ #include <time.h>
+ #include <net/if_arp.h>
++#include <libgen.h>
+ 
+ #include "list.h"
+ #include "utils.h"

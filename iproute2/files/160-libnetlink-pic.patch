@@ -1,3 +1,34 @@
+author	Tony Ambardar <itugrok@yahoo.com>	Sat Feb 20 08:56:20 2021 -0800
+committer	Hauke Mehrtens <hauke@hauke-m.de>	Mon Mar 01 00:34:23 2021 +0100
+iproute2: update to 5.11.0
+
+The latest iproute2 version brings various improvements and fixes:
+https://git.kernel.org/pub/scm/network/iproute2/iproute2.git/log/?qt=range&q=v5.10.0..v5.11.0
+
+In particular, ip and tc now use libbpf as the standard way to load BPF
+programs, rather than the old, limited custom loader. This allows more
+consistent and featureful BPF program handling e.g. support for global
+initialized variables.
+
+Also fix a longstanding problem with iproute2 builds where unneeded DSO
+dependencies are added to most utilities, bloating their installation
+footprint. From research and testing, explicitly using a "--as-needed"
+linker flag avoids the issue. Update accordingly and drop extra package
+dependencies from Makefile.
+
+Additional build and packaging updates include:
+
+  - install missing development header to iproute2/bpf_elf.h
+  - propagate OpenWrt verbose flag during build
+  - update and refresh patches
+
+Compile and run tested: QEMU/malta-mips32be on kernels 5.4 & 5.10.
+
+All iproute2 packages were built and installed to the test image. Some
+regression testing using ip-full and tc was successfully performed to
+exercise several kmods, tc modules, and simple BPF programs.
+
+Signed-off-by: Tony Ambardar <itugrok@yahoo.com>
 --- a/lib/Makefile
 +++ b/lib/Makefile
 @@ -1,7 +1,7 @@
@@ -7,5 +38,5 @@
 -CFLAGS += -fPIC
 +CFLAGS += $(FPIC)
  
- UTILOBJ = utils.o rt_names.o ll_map.o ll_types.o ll_proto.o ll_addr.o \
- 	inet_proto.o namespace.o json_writer.o json_print.o \
+ UTILOBJ = utils.o utils_math.o rt_names.o ll_map.o ll_types.o ll_proto.o ll_addr.o \
+ 	inet_proto.o namespace.o json_writer.o json_print.o json_print_math.o \

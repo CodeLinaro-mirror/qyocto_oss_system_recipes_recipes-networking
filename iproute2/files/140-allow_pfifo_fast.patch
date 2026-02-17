@@ -1,6 +1,35 @@
+author	Nick Hainke <vincent@systemli.org>	Wed Feb 22 15:56:25 2023 +0100
+committer	Hauke Mehrtens <hauke@hauke-m.de>	Sat Feb 25 13:32:35 2023 +0100
+iproute2: update to 6.2
+
+Release Notes:
+https://lwn.net/Articles/923952/
+
+Refresh patches:
+- 110-darwin_fixes.patch
+- 115-add-config-xtlibdir.patch
+- 140-allow_pfifo_fast.patch
+- 140-keep_libmnl_optional.patch
+- 145-keep_libelf_optional.patch
+- 150-keep_libcap_optional.patch
+- 155-keep_tirpc_optional.patch
+- 170-ip_tiny.patch
+- 175-reduce-dynamic-syms.patch
+- 180-drop_FAILED_POLICY.patch
+- 190-fix-nls-rpath-link.patch
+- 195-build_variant_ip_tc.patch
+- 200-drop_libbsd_dependency.patch
+- 300-selinux-configurable.patch
+
+Remove upstreamed:
+- 320-configure-Remove-include-sys-stat.h.patch
+
+While working on it remove AUTORELEASE.
+
+Signed-off-by: Nick Hainke <vincent@systemli.org>
 --- a/tc/q_fifo.c
 +++ b/tc/q_fifo.c
-@@ -99,5 +99,6 @@ struct qdisc_util pfifo_head_drop_qdisc_util = {
+@@ -90,5 +90,6 @@ struct qdisc_util pfifo_head_drop_qdisc_
  
  struct qdisc_util pfifo_fast_qdisc_util = {
  	.id = "pfifo_fast",

@@ -1,0 +1,41 @@
+author	Rui Salvaterra <rsalvaterra@gmail.com>	Sat May 25 15:30:25 2024 +0000
+committer	Hauke Mehrtens <hauke@hauke-m.de>	Fri May 31 11:13:31 2024 +0200
+iproute2: update to 6.9.0
+
+Support for iptables action has been dropped. Remove tc-mod-iptables and related
+patch (175-reduce-dynamic-syms.patch).
+
+We also add the missing libbpf dependency for `ss` since iproute 8740ca9
+("ss: add support for BPF socket-local storage") now means that `ss` requires
+libbpf as well.
+
+Fix 170-ip_tiny.patch, as the help text didn't match all the included functions.
+
+Drop upstreamed patches 402-bpf-fix-warning-from-basename.patch
+and 403-bpf-include-libgen.h-for-basename.patch.
+
+All other patches automatically rebased.
+
+Co-authored-by: Rany Hany <rany_hany@riseup.net>
+Signed-off-by: Rui Salvaterra <rsalvaterra@gmail.com>
+Signed-off-by: Rany Hany <rany_hany@riseup.net>
+--- a/configure
++++ b/configure
+@@ -241,7 +241,7 @@ int main(int argc, char **argv) {
+ }
+ EOF
+ 
+-    $CC -o $TMPDIR/libbpf_test $TMPDIR/libbpf_test.c $LIBBPF_CFLAGS $LIBBPF_LDLIBS >/dev/null 2>&1
++    $CC -o $TMPDIR/libbpf_test $TMPDIR/libbpf_test.c $LIBBPF_CFLAGS $LIBBPF_LDLIBS $LDFLAGS >/dev/null 2>&1
+     local ret=$?
+ 
+     rm -f $TMPDIR/libbpf_test.c $TMPDIR/libbpf_test
+@@ -259,7 +259,7 @@ int main(int argc, char **argv) {
+ }
+ EOF
+ 
+-    $CC -o $TMPDIR/libbpf_sec_test $TMPDIR/libbpf_sec_test.c $LIBBPF_CFLAGS $LIBBPF_LDLIBS >/dev/null 2>&1
++    $CC -o $TMPDIR/libbpf_sec_test $TMPDIR/libbpf_sec_test.c $LIBBPF_CFLAGS $LIBBPF_LDLIBS $LDFLAGS >/dev/null 2>&1
+     local ret=$?
+ 
+     rm -f $TMPDIR/libbpf_sec_test.c $TMPDIR/libbpf_sec_test
